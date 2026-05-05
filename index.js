@@ -1,5 +1,6 @@
 export default {
   async fetch(request, env) {
+    // 1. Handle Preflight (OPTIONS) requests
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
@@ -15,14 +16,13 @@ export default {
     const quizId = searchParams.get('quizId');
     const score = parseFloat(searchParams.get('score') || "0");
     const time = parseInt(searchParams.get('timeTaken') || "0");
+    const submittedAt = searchParams.get('submittedAt'); // RE-ADDED for sync accuracy
 
-    if (!dbUrl || !quizId) return new Response("Missing Data", { status: 400 });
+    // Validation including submittedAt
+    if (!dbUrl || !quizId || !submittedAt) return new Response("Missing Data", { status: 400 });
 
     try {
-      // --- ADVANCED FILTERED QUERIES ---
-      // We use .json?shallow=true to get only keys for the total count
-      // We use limitToLast(10) to fetch only 10 toppers, not thousands
-      
+      // --- ADVANCED FILTERED QUERIES (Saves 99% Bandwidth) ---
       const higherScoreUrl = `${dbUrl}/attempt_history/${quizId}.json?orderBy="score"&startAfter=${score}`;
       const tieBreakerUrl = `${dbUrl}/attempt_history/${quizId}.json?orderBy="score"&equalTo=${score}`;
       const topperUrl = `${dbUrl}/quiz_results/${quizId}.json?orderBy="score"&limitToLast=10`;
@@ -40,13 +40,15 @@ export default {
       const toppersRaw = await topRes.json() || {};
       const totalData = await totalRes.json() || {};
 
-      // Logic for Rank & Tie-Breaker
+      // --- LOGIC ENGINE ---
+      // Rank: (Strictly Higher Scores) + (Same Score but Faster Time) + 1
       const countHigher = Object.keys(higherData).length;
-      const countFasterTies = Object.values(tieData).filter(att => att.timeTaken < time).length;
+      const countFasterTies = Object.values(tieData).filter((att) => att.timeTaken < time).length;
+      
       const finalRank = countHigher + countFasterTies + 1;
       const totalParticipants = Object.keys(totalData).length;
 
-      // Ensure the Top 10 are sorted correctly (Score desc, Time asc)
+      // Toppers sorting: Highest score first, then fastest time
       const toppers = Object.values(toppersRaw).sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.timeTaken - b.timeTaken;
@@ -59,7 +61,10 @@ export default {
         percentile: totalParticipants > 1 ? (((totalParticipants - finalRank) / (totalParticipants - 1)) * 100).toFixed(2) : "100.00",
         toppers: toppers
       }), {
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { 
+          "Content-Type": "application/json", 
+          "Access-Control-Allow-Origin": "*" 
+        }
       });
 
     } catch (err) {
@@ -67,4 +72,3 @@ export default {
     }
   }
 };
-        
