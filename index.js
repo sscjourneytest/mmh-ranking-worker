@@ -13,8 +13,8 @@ export default {
     const { searchParams } = new URL(request.url);
     const dbUrl = searchParams.get('dbUrl');
     const quizId = searchParams.get('quizId');
-    const score = parseFloat(searchParams.get('score') || 0);
-    const time = parseInt(searchParams.get('timeTaken') || 0);
+    const score = parseFloat(searchParams.get('score') || "0");
+    const time = parseInt(searchParams.get('timeTaken') || "0");
 
     if (!dbUrl || !quizId) return new Response("Missing Data", { status: 400 });
 
