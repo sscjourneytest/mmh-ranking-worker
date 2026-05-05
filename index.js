@@ -1,14 +1,15 @@
 export default {
   async fetch(request, env) {
-    // 1. Handle Preflight (OPTIONS) requests
+    // Standard CORS headers used for every response
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    // 1. Handle Preflight (OPTIONS) requests - MUST return headers
     if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      });
+      return new Response(null, { headers: corsHeaders });
     }
 
     const { searchParams } = new URL(request.url);
@@ -16,13 +17,15 @@ export default {
     const quizId = searchParams.get('quizId');
     const score = parseFloat(searchParams.get('score') || "0");
     const time = parseInt(searchParams.get('timeTaken') || "0");
-    const submittedAt = searchParams.get('submittedAt'); // RE-ADDED for sync accuracy
+    const submittedAt = searchParams.get('submittedAt'); 
 
-    // Validation including submittedAt
-    if (!dbUrl || !quizId || !submittedAt) return new Response("Missing Data", { status: 400 });
+    // Validation
+    if (!dbUrl || !quizId || !submittedAt) {
+      return new Response("Missing Data", { status: 400, headers: corsHeaders });
+    }
 
     try {
-      // --- ADVANCED FILTERED QUERIES (Saves 99% Bandwidth) ---
+      // --- ADVANCED FILTERED QUERIES ---
       const higherScoreUrl = `${dbUrl}/attempt_history/${quizId}.json?orderBy="score"&startAfter=${score}`;
       const tieBreakerUrl = `${dbUrl}/attempt_history/${quizId}.json?orderBy="score"&equalTo=${score}`;
       const topperUrl = `${dbUrl}/quiz_results/${quizId}.json?orderBy="score"&limitToLast=10`;
@@ -41,14 +44,12 @@ export default {
       const totalData = await totalRes.json() || {};
 
       // --- LOGIC ENGINE ---
-      // Rank: (Strictly Higher Scores) + (Same Score but Faster Time) + 1
       const countHigher = Object.keys(higherData).length;
       const countFasterTies = Object.values(tieData).filter((att) => att.timeTaken < time).length;
       
       const finalRank = countHigher + countFasterTies + 1;
       const totalParticipants = Object.keys(totalData).length;
 
-      // Toppers sorting: Highest score first, then fastest time
       const toppers = Object.values(toppersRaw).sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.timeTaken - b.timeTaken;
@@ -62,13 +63,16 @@ export default {
         toppers: toppers
       }), {
         headers: { 
-          "Content-Type": "application/json", 
-          "Access-Control-Allow-Origin": "*" 
+          ...corsHeaders,
+          "Content-Type": "application/json" 
         }
       });
 
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: err.message }), { 
+        status: 500, 
+        headers: corsHeaders 
+      });
     }
   }
 };
