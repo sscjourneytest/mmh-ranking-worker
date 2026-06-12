@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logical Reasoning Palette</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+  }
+
+  .palette-container {
+    width: 320px;
+    border: 1px solid #eee;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  }
+
+  /* Header Styles */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #444;
+  }
+  
+  .play-icon {
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 12px solid #2196F3; /* Blue play triangle */
+    margin-right: 10px;
+  }
+
+  /* Grid Styles */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    row-gap: 15px;
+    column-gap: 10px;
+    margin-bottom: 25px;
+  }
+
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Number Box Styles */
+  .box {
+    width: 38px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+  }
+
+  /* Colors */
+  .bg-yellow { background-color: #fceb1c; color: #000; }
+  .bg-blue   { background-color: #1a1aff; }
+  .bg-green  { background-color: #1b8a1b; }
+  .bg-red    { background-color: #f71212; }
+
+  /* Arrow (Triangle) Styles */
+  .arrow-up {
+    width: 11px;
+    height: 8px;
+    background-color: #000;
+    /* Draws an arrowhead with a slightly indented bottom (inverted V) */
+    clip-path: polygon(50% 0%, 100% 100%, 50% 75%, 0% 100%);
+    margin-top: 5px;
+  }
+
+  /* Keeps the row spacing uniform even if the arrow is missing */
+  .arrow-hidden {
+    background-color: transparent;
+  }
+
+  /* Footer & Analysis Styles */
+  .analysis-bar {
+    background-color: #cccccc;
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+    color: #000;
+    margin-bottom: 15px;
+    border-radius: 2px;
+  }
+
+  .stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 0 10px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #555;
+    font-size: 14px;
+  }
+
+  .stat-box {
+    width: 25px;
+    height: 20px;
+    background-color: #fceb1c;
+    color: #d32f2f;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  /* Button Styles */
+  .btn-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  .camera-btn {
+    background-color: #1565c0;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="palette-container">
+  <div class="header">
+    <div class="play-icon"></div>
+    Logical Reasoning
+  </div>
+
+  <div class="grid">
+    <div class="cell"><div class="box bg-yellow">1</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">2</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-yellow">3</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">4</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-green">5</div><div class="arrow-up arrow-hidden"></div></div>
+
+    <div class="cell"><div class="box bg-green">6</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-green">7</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-green">8</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-yellow">9</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">10</div><div class="arrow-up arrow-hidden"></div></div>
+
+    <div class="cell"><div class="box bg-green">11</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-blue">12</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-green">13</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-yellow">14</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">15</div><div class="arrow-up arrow-hidden"></div></div>
+
+    <div class="cell"><div class="box bg-red">16</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">17</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-red">18</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">19</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-red">20</div><div class="arrow-up"></div></div>
+
+    <div class="cell"><div class="box bg-blue">21</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-red">22</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">23</div><div class="arrow-up arrow-hidden"></div></div>
+    <div class="cell"><div class="box bg-red">24</div><div class="arrow-up"></div></div>
+    <div class="cell"><div class="box bg-blue">25</div><div class="arrow-up arrow-hidden"></div></div>
+  </div>
+
+  <div class="analysis-bar">PART-B Analysis</div>
+  
+  <div class="stats-container">
+    <div class="stat-row">
+      <span>Answered</span>
+      <div class="stat-box">10</div>
+    </div>
+    <div class="stat-row">
+      <span>Not Answered</span>
+      <div class="stat-box">10</div>
+    </div>
+  </div>
+
+  <div class="btn-container">
+    <button class="camera-btn">Show Camera</button>
+  </div>
+</div>
+
+</body>
+</html>
