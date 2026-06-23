@@ -1,0 +1,129 @@
+name: Fetch SSC HTML
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'SSC ViewCandResponse URL'
+        required: true
+        type: string
+      part:
+        description: 'Part number (1/2/3/4)'
+        required: false
+        default: 'all'
+        type: string
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Fetch Part 1
+        id: p1
+        run: |
+          BASE=$(echo "${{ inputs.url }}" | grep -oP 'https?://.+?(?=ViewCandResponse)')
+          KEY=$(echo "${{ inputs.url }}" | grep -oiP '(?i)(?:enckey|EncKey)=\K[^&]+')
+          URL="${BASE}ViewCandResponse.aspx?enckey=${KEY}"
+          echo "Fetching: $URL"
+          HTTP=$(curl -s -o p1.html -w "%{http_code}" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+            -H "Accept-Language: en-US,en-IN;q=0.9,en;q=0.8" \
+            -H "Accept-Encoding: gzip, deflate, br" \
+            -H "Connection: keep-alive" \
+            -H "Upgrade-Insecure-Requests: 1" \
+            --compressed -L --max-time 30 "$URL")
+          echo "HTTP status: $HTTP"
+          if [ "$HTTP" = "200" ] && grep -q "ViewCandResponse\|Q\.No" p1.html 2>/dev/null; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Part 1: OK ($(wc -c < p1.html) bytes)"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "Part 1: FAILED or empty"
+            rm -f p1.html
+          fi
+
+      - name: Fetch Part 2
+        if: steps.p1.outputs.found == 'true'
+        id: p2
+        run: |
+          BASE=$(echo "${{ inputs.url }}" | grep -oP 'https?://.+?(?=ViewCandResponse)')
+          KEY=$(echo "${{ inputs.url }}" | grep -oiP '(?i)(?:enckey|EncKey)=\K[^&]+')
+          URL="${BASE}ViewCandResponse2.aspx?EncKey=${KEY}"
+          HTTP=$(curl -s -o p2.html -w "%{http_code}" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+            -H "Accept-Language: en-US,en-IN;q=0.9,en;q=0.8" \
+            --compressed -L --max-time 30 "$URL")
+          if [ "$HTTP" = "200" ] && grep -q "Q\.No" p2.html 2>/dev/null; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Part 2: OK ($(wc -c < p2.html) bytes)"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            rm -f p2.html
+          fi
+
+      - name: Fetch Part 3
+        if: steps.p2.outputs.found == 'true'
+        id: p3
+        run: |
+          BASE=$(echo "${{ inputs.url }}" | grep -oP 'https?://.+?(?=ViewCandResponse)')
+          KEY=$(echo "${{ inputs.url }}" | grep -oiP '(?i)(?:enckey|EncKey)=\K[^&]+')
+          URL="${BASE}ViewCandResponse3.aspx?EncKey=${KEY}"
+          HTTP=$(curl -s -o p3.html -w "%{http_code}" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+            -H "Accept-Language: en-US,en-IN;q=0.9,en;q=0.8" \
+            --compressed -L --max-time 30 "$URL")
+          if [ "$HTTP" = "200" ] && grep -q "Q\.No" p3.html 2>/dev/null; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Part 3: OK ($(wc -c < p3.html) bytes)"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            rm -f p3.html
+          fi
+
+      - name: Fetch Part 4
+        if: steps.p3.outputs.found == 'true'
+        id: p4
+        run: |
+          BASE=$(echo "${{ inputs.url }}" | grep -oP 'https?://.+?(?=ViewCandResponse)')
+          KEY=$(echo "${{ inputs.url }}" | grep -oiP '(?i)(?:enckey|EncKey)=\K[^&]+')
+          URL="${BASE}ViewCandResponse4.aspx?EncKey=${KEY}"
+          HTTP=$(curl -s -o p4.html -w "%{http_code}" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+            -H "Accept-Language: en-US,en-IN;q=0.9,en;q=0.8" \
+            --compressed -L --max-time 30 "$URL")
+          if [ "$HTTP" = "200" ] && grep -q "Q\.No" p4.html 2>/dev/null; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Part 4: OK ($(wc -c < p4.html) bytes)"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            rm -f p4.html
+          fi
+
+      - name: Bundle all parts as JSON
+        run: |
+          python3 - <<'EOF'
+          import json, os, glob
+
+          parts = {}
+          for f in sorted(glob.glob("p*.html")):
+            name = f.replace(".html","")  # p1, p2, p3, p4
+            with open(f, encoding="utf-8", errors="replace") as fh:
+              parts[name] = fh.read()
+
+          with open("result.json", "w", encoding="utf-8") as out:
+            json.dump({"parts": parts, "count": len(parts)}, out, ensure_ascii=False)
+
+          print(f"Bundled {len(parts)} parts into result.json")
+          EOF
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssc-html
+          path: result.json
+          retention-days: 1
